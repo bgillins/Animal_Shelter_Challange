@@ -1,0 +1,59 @@
+%%sql
+postgresql:///animal_shelters
+
+SELECT               
+a.animaltype, a.size, sum(age_costs.costs + size_costs.costs + l.costs) as total, 
+
+ROUND(sum(age_costs.costs + size_costs.costs + l.costs)*100 / sum(sum(age_costs.costs + size_costs.costs + l.costs)) OVER(),2) AS percentage
+
+
+FROM 
+(SELECT animalid, 
+ cast(date_part('year', '12/31/2021'::date)- date_part('year', birthdate::date) AS INT) AS pet_age, 
+ animals.animaltype,
+                (CASE WHEN animals.animaltype = 'Dog' THEN
+                CASE WHEN weight <= 10 THEN 'small'
+                WHEN (weight > 10 AND weight <= 30) THEN 'medium'
+                ELSE 'large' END 
+                WHEN animals.animaltype = 'Cat' THEN
+                CASE WHEN weight <= 5 THEN 'small'
+                WHEN (weight > 5 AND weight <= 7) THEN 'medium'
+                ELSE 'large' END 
+                WHEN animals.animaltype = 'Bird' THEN 
+                CASE WHEN weight <= 0.7 THEN 'small'
+                WHEN (weight > 0.7 AND weight <= 1.1) THEN 'medium'
+                ELSE 'large' END END) AS size, 
+ 
+ 
+                (CASE WHEN animals.animaltype = 'Dog' THEN
+                CASE WHEN weight <= 10 THEN 'DS'
+                WHEN (weight > 10 AND weight <= 30) THEN 'DM'
+                ELSE 'DL' END 
+                WHEN animals.animaltype = 'Cat' THEN
+                CASE WHEN weight <= 5 THEN 'CS'
+                WHEN (weight > 5 AND weight <= 7) THEN 'CM'
+                ELSE 'CL' END 
+                WHEN animals.animaltype = 'Bird' THEN 
+                CASE WHEN weight <= 0.7 THEN 'BS'
+                WHEN (weight > 0.7 AND weight <= 1.1) THEN 'BM'
+                ELSE 'BL' END END) AS size_id, 
+
+animals.location
+
+FROM animals
+LEFT JOIN sponsored_animals AS sa 
+ON animalid = sa.sponsorid
+WHERE sa.sponsorid IS NULL
+) AS a
+
+LEFT JOIN location_costs as l
+ON a.location = l.location
+
+INNER JOIN age_costs
+ON a.pet_age = CAST(age_costs.age AS INT)
+
+INNER JOIN size_costs
+ON a.size_id = size_costs.sizeid
+
+GROUP BY a.animaltype, a.size
+ORDER BY a.animaltype, a.size DESCCABD
