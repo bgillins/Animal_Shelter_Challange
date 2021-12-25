@@ -56,4 +56,4 @@ INNER JOIN size_costs
 ON a.size_id = size_costs.sizeid
 
 GROUP BY a.animaltype, a.size
-ORDER BY a.animaltype, a.size DESCCABD
+ORDER BY a.animaltype, a.size DESC
